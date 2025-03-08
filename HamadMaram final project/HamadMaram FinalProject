@@ -1,0 +1,160 @@
+# Inventory Tracker GUI app created to help businesses track the inventory they currently have
+# Imported the libraries I needed for the GUI
+import tkinter as tk # Imported tkinter as tk to use the tkinter library
+from tkinter import ttk  # Imported ttk from tkinter to use the themed widgets in the GUI
+from tkinter import messagebox  # Imported messagebox from tkinter so I can display messages in the GUI
+from PIL import Image,ImageTk # Imported ImageTk and image from the PIL library to display the images in the GUI
+from tkinter import PhotoImage #Imported PhotoImage from tkinter so I can use images in the GUI
+
+# Made a list to store the inventory data in it
+inventory = []
+
+# To validate the item data input by the user and check if its an integer for the quantity or float for the price.
+def item_data(name, quantity, unit_price):
+    try:
+        quantity = int(quantity)
+        unit_price = float(unit_price)
+        return True
+    except ValueError:
+        messagebox.showerror("Error!", "Please try again and enter a valid price and quantity")
+        return False
+
+"""This function creates a new window to add an item to the inventory, with labels and entry fields for the item's information"""
+def add_item_window():
+    add_item_win = tk.Toplevel(main)
+    add_item_win.title("Add  item to the inventory")
+    
+    ''''I defined the labels and entry fields for the item's information'''
+    # For the name of the item
+    name_label = tk.Label(add_item_win, text="Item Name:")
+    name_label.grid(row=0, column=0)
+    name_entry = tk.Entry(add_item_win)
+    name_entry.grid(row=0, column=1)
+    # For the quantity of the item
+    quantity_label = tk.Label(add_item_win, text="Quantity:")
+    quantity_label.grid(row=1, column=0)
+    quantity_entry = tk.Entry(add_item_win)
+    quantity_entry.grid(row=1, column=1)
+    # For the unit price of the item
+    price_label = tk.Label(add_item_win, text="Unit Price:") 
+    price_label.grid(row=2, column=0)
+    unit_price_entry = tk.Entry(add_item_win) 
+    unit_price_entry.grid(row=2, column=1) 
+    
+    # This is a button to save an item to the inventory
+    def save_item():
+        name = name_entry.get()
+        quantity = quantity_entry.get()
+        unit_price = unit_price_entry.get()
+        
+        if item_data(name, quantity, unit_price):
+            inventory.append({"name": name, "quantity": int(quantity), "unit_price": float(unit_price)})
+            messagebox.showinfo("Complete!","Item has been added")
+            add_item_win.destroy()
+        else:
+            messagebox.showerror("Error!", "The data entered is invalid, please try again and check the input")
+
+    save_button = tk.Button(add_item_win, text="Save",command=save_item)
+    save_button.grid(row=3, column=0, columnspan=2)
+
+# Using a function to delete a selected item
+def delete_item(selected_item):
+    selected_item= tree.selection()
+    if selected_item:
+        inventory.remove(selected_item)
+        messagebox.showinfo("Complete!", "Item has been deleted")
+        update_inventory_tree()
+    else:
+        messagebox.showerror("Error!", "No item was selected to delete")
+
+def update_inventory_tree():
+    for item in tree.get_children():
+        tree.delete(item)
+    
+    for item in inventory:
+        tree.insert("","end", values=(item["name"], item["quantity"], item["unit_price"]))
+
+
+# Another function to view the inventory in a new window using the treeview widget
+def view_inventory():
+    inventory_win = tk.Toplevel(main)
+    inventory_win.title("My Inventory")
+    
+    # This is to display the items in the inventory window using a treeview widget
+    
+    global tree
+    tree = ttk.Treeview(inventory_win, selectmode='browse')
+    tree["columns"] = ("Name", "Quantity", "Unit Price")
+    
+    # Just set and defined the heading of the columns in the treeview
+    
+    tree.heading("#1", text="Name")
+    tree.heading("#2", text="Quantity")
+    tree.heading("#3", text="Unit Price")
+    
+    update_inventory_tree()
+
+    # This is a function that will delete the selected item from the inventory when the user clicks the delete button
+    def delete_selected_item():
+        selected_items = tree.selection()
+        if selected_items:
+            for selected_item in selected_items:
+                selected_item_data = tree.item(selected_item)["values"]
+                item_to_delete = next((item for item in inventory if item["name"] == selected_item_data[0] and 
+                                       item["quantity"] == selected_item_data[1] and item["unit_price"] == selected_item_data[2]), None)
+                if item_to_delete:
+                    delete_item(item_to_delete)
+        else:
+            messagebox.showerror("Oops", "No item was selected to delete,Try again.")
+          
+
+    delete_button = tk.Button(inventory_win, text="Delete Selected Item", font=("Times new roman", 16), bg="#f44336", fg="black", command=delete_selected_item)
+    delete_button.pack(pady=20)
+    
+    tree.pack(pady=20)
+
+# This function creates the main window for the inventory tracker app, with buttons to add an item and view the inventory
+def inventory_window():
+    global main
+    main = tk.Tk()
+    main.title("The Inventory Tracker App")
+    
+    # Set the background image, color and dimensions for main window 
+    main.geometry("500x400")
+    main.configure(bg='white')
+    background_image=Image.open('inventoryBG.jpg')
+    background_image=background_image.resize((500,400))
+    background_photo=ImageTk.PhotoImage(background_image)
+    
+    # Some labels to display the background image on the entire main window
+    background_label=tk.Label(main,image=background_photo)
+    background_label.place(relwidth=1,relheight=1)
+    background_label.image=background_photo
+    
+    # Added an icon for the main winndow
+    image=Image.open('inventory.png')
+    photo=ImageTk.PhotoImage(image)
+    main.wm_iconphoto(False,photo)
+    
+    # A title label for the main window
+    head_label = tk.Label(main, text="Welcome to the Inventory Tracker!", font=("Times new roman",20,"bold" ), bg="beige")
+    head_label.pack(pady=20)
+
+    # A button to show and view the window for adding an item, a button to view the current inventory ,and an exit button
+    add_item_button = tk.Button(main, text="Add an item", font=("Times new roman", 17,"bold"), bg="#30A3F0", fg="black", command=add_item_window)
+    add_item_button.pack(pady=10)
+
+    view_inventory_button = tk.Button(main, text="View My Inventory", font=("Times new roman", 15,"bold"), bg="yellow", fg="black", command=view_inventory)
+    view_inventory_button.pack(pady=10)
+    
+    exit_button = tk.Button(main, text="Exit", font=("Times new roman", 15,"bold"), bg="beige", fg="black", command=main.quit)
+    exit_button.pack(pady=10)
+
+    
+    main.mainloop()
+
+# Starting the main window
+if __name__ == "__main__":
+    
+    inventory_window()
+    
